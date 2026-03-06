@@ -1,5 +1,6 @@
 import {createNativeStackNavigator} from "@react-navigation/native-stack";
 import LoginScreen from "../screens/LoginScreen";
+import TabsNavigator from "./TabsNavigator";
 
 export type RootStackParamList = {
     Login: undefined;
@@ -15,6 +16,11 @@ export default function StackNavigator() {
                 <Stack.Screen
                 name={"Login"} 
                 component={LoginScreen}/>
+
+                <Stack.Screen
+                name="Tabs"
+                component={TabsNavigator}
+                />
             </Stack.Navigator>
     );
 }
