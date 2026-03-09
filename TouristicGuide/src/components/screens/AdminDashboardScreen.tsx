@@ -1,13 +1,13 @@
 import { View, Text, TouchableOpacity, StyleSheet, StatusBar } from "react-native";
 import { useAuth } from "../../context/AuthContext";
-import { colors, typography, spacing, radius, commonStyles } from "../../theme/theme";
+import { colors, typography, spacing, commonStyles } from "../../theme/theme";
 
-export default function AdminDashboardScreen({ navigation }: any) {
+export default function AdminDashboardScreen() {
   const { user, logout } = useAuth();
 
   const handleLogout = async () => {
     await logout();
-    navigation.reset({ index: 0, routes: [{ name: "Splash" }] });
+    // RootNavigator cambia a AuthStack automáticamente
   };
 
   return (

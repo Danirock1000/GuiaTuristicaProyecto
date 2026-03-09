@@ -1,15 +1,9 @@
 import { View, Text, TouchableOpacity, StyleSheet, StatusBar } from "react-native";
 import MapView, { Marker, Callout } from "react-native-maps";
-import { useNavigation } from "@react-navigation/native";
-import { colors, typography, spacing, radius } from "../../theme/theme";
-import { PLACES, SPS_REGION } from "../../data/places";
-import { useAuth } from "../../context/AuthContext";
+import { colors, typography, spacing, radius } from "../theme/theme";
+import { PLACES, SPS_REGION } from "../data/places";
 
-export default function MapScreen() {
-  const navigation = useNavigation<any>();
-  const { user } = useAuth();
-  const isGuest = !user;
-
+export default function HomeScreen({ navigation }: any) {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={colors.background} />
@@ -17,15 +11,13 @@ export default function MapScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>TuriMap</Text>
-        {isGuest && (
-          <TouchableOpacity
-            style={styles.profileBtn}
-            onPress={() => navigation.navigate("Login")}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.profileIcon}>👤</Text>
-          </TouchableOpacity>
-        )}
+        <TouchableOpacity
+          style={styles.profileBtn}
+          onPress={() => navigation.navigate("Login")}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.profileIcon}>👤</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Mapa */}
