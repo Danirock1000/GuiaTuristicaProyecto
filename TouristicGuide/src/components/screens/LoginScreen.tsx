@@ -39,12 +39,7 @@ export default function LoginScreen({ navigation }: any) {
       role: found.role,
     });
     setLoading(false);
-
-    if (found.role === "admin") {
-      navigation.reset({ index: 0, routes: [{ name: "AdminDashboard" }] });
-    } else {
-      navigation.reset({ index: 0, routes: [{ name: "Home" }] });
-    }
+    // RootNavigator cambia de stack automáticamente al detectar el usuario
   };
 
   return (
