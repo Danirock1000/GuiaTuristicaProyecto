@@ -5,7 +5,7 @@ import { useAuth } from "../../context/AuthContext";
 
 export default function ProfileScreen() {
   const navigation = useNavigation<any>();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const isGuest = !user;
 
   if (isGuest) {
@@ -34,13 +34,21 @@ export default function ProfileScreen() {
     );
   }
 
-  // Versión logueada (placeholder por ahora)
+  // Versión logueada
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={colors.background} />
       <Text style={styles.title}>Mi Perfil</Text>
       <Text style={styles.subtitle}>{user?.nombre}</Text>
       <Text style={styles.email}>{user?.email}</Text>
+
+      <TouchableOpacity
+        style={[commonStyles.btnSecondary, styles.logoutBtn]}
+        onPress={() => logout()}
+        activeOpacity={0.8}
+      >
+        <Text style={styles.logoutText}>Cerrar sesión</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -97,5 +105,14 @@ const styles = StyleSheet.create({
     fontSize: typography.md,
     color: colors.primary,
     marginTop: spacing.xs,
+  },
+  logoutBtn: {
+    marginTop: spacing.xl,
+    borderColor: colors.danger,
+  },
+  logoutText: {
+    color: colors.danger,
+    fontSize: typography.md,
+    fontWeight: "600",
   },
 });
