@@ -43,6 +43,15 @@ export default function StartScreen({ navigation }: any) {
         >
           <Text style={commonStyles.btnSecondaryText}>Iniciar sesión</Text>
         </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[commonStyles.btnSecondary, {marginTop: spacing.md}]}
+          onPress={() => navigation.navigate("Register")}
+          activeOpacity={0.8}
+          >
+            <Text style={commonStyles.btnSecondaryText}>Registrarse</Text>
+          </TouchableOpacity>
+        
       </View>
     </View>
   );

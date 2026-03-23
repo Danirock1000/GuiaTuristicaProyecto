@@ -1,44 +1,18 @@
 import { createContext, useContext, useState, useEffect } from "react";
+import {supabase} from "../services/supabaseClient"
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import {User} from "../types/user"
 
-type User = {
-  id: number;
-  nombre: string;
-  email: string;
-  role: "admin" | "user";
-} | null;
+const AUTH_STORAGE_KEY = "@turimap_user";
 
 type AuthContextType = {
   user: User;
   isLoading: boolean;
-  login: (userData: { id: number; nombre: string; email: string; role: "admin" | "user" }) => Promise<void>;
+  login: (email: string, password: string ) => Promise<void>;
+  register: (email: string, password: string, name: string) => Promise<void>;
   logout: () => Promise<void>;
+
 };
-
-const HARDCODED_USERS = [
-  {
-    id: 1,
-    nombre: "Administrador",
-    email: "admin@turimap.com",
-    password: "admin123",
-    role: "admin" as const,
-  },
-  {
-    id: 2,
-    nombre: "Usuario",
-    email: "user@turimap.com",
-    password: "user123",
-    role: "user" as const,
-  },
-];
-
-export const findUser = (email: string, password: string) => {
-  return HARDCODED_USERS.find(
-    (u) => u.email === email && u.password === password
-  ) || null;
-};
-
-const AUTH_STORAGE_KEY = "@turimap_user";
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
@@ -69,9 +43,46 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     loadUser();
   }, []);
 
-  const login = async (userData: { id: number; nombre: string; email: string; role: "admin" | "user" }) => {
-    setUser(userData);
-    await AsyncStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(userData));
+  const login = async (email: string, password: string) => {
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    console.log("Login response:", { data, error });
+    
+    if (error) {
+      console.error("Login error:", error);
+      throw new Error(error.message || "Error al iniciar sesión");
+    }
+    
+    if (!data.user) {
+      throw new Error("Usuario no encontrado");
+    }
+
+    const signedUser: User = {
+      id: String(data.user.id),
+      name: (data.user.user_metadata as any)?.name ?? "",
+      email: data.user.email ?? "",
+      avatarUrl: (data.user.user_metadata as any)?.avatarUrl ?? "",
+      role: (data.user.user_metadata as any)?.role ?? "user",
+      isActive: true,
+      createdAt: data.user.created_at ?? new Date().toISOString(),
+      token: data.session?.access_token,
+    };
+
+    setUser(signedUser);
+    await AsyncStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(signedUser));
+  };
+
+  const register = async (email: string, password: string, name: string) => {
+    const {data, error} = await supabase.auth.signUp({
+      email,
+      password
+    });
+    console.log("res data: ", data)
+    if (error) throw error;
+    if (!data.user) throw new Error("Error al registrar usuario");
+
+    // For registration, we might want to automatically sign in the user
+    // or show a message that they need to confirm their email
+    // For now, we'll just return without setting the user
   };
 
   const logout = async () => {
@@ -80,7 +91,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, login, logout, register}}>
       {children}
     </AuthContext.Provider>
   );

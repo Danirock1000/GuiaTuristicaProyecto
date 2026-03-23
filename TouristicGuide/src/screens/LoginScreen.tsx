@@ -1,7 +1,7 @@
 import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, StatusBar, ActivityIndicator } from "react-native";
 import { useState } from "react";
-import { useAuth, findUser } from "../../context/AuthContext";
-import { colors, typography, spacing, commonStyles } from "../../theme/theme";
+import { useAuth } from "../context/AuthContext";
+import { colors, typography, spacing, commonStyles } from "../theme/theme";
 
 export default function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState("");
@@ -24,20 +24,31 @@ export default function LoginScreen({ navigation }: any) {
       return;
     }
 
-    const found = findUser(email, password);
-
-    if (!found) {
-      Alert.alert("Error", "Credenciales incorrectas");
-      return;
-    }
-
     setLoading(true);
-    await login({
-      id: found.id,
-      nombre: found.nombre,
-      email: found.email,
-      role: found.role,
-    });
+    try {
+      await login(email, password);
+    } catch (error: any) {
+      console.error("Login error:", error);
+      
+      // Handle specific Supabase error messages
+      let errorMessage = "No se pudo iniciar sesión. Verifica tus credenciales.";
+      
+      if (error.message) {
+        if (error.message.includes("Invalid login credentials")) {
+          errorMessage = "Credenciales incorrectas. Verifica tu email y contraseña.";
+        } else if (error.message.includes("Email not confirmed")) {
+          errorMessage = "Por favor confirma tu email antes de iniciar sesión.";
+        } else if (error.message.includes("Too many requests")) {
+          errorMessage = "Demasiados intentos. Inténtalo de nuevo más tarde.";
+        } else if (error.message.includes("User not found")) {
+          errorMessage = "Usuario no encontrado. Verifica tu email.";
+        } else {
+          errorMessage = `Error: ${error.message}`;
+        }
+      }
+      
+      Alert.alert("Error", errorMessage);
+    }
     setLoading(false);
     // RootNavigator cambia de stack automáticamente al detectar el usuario
   };

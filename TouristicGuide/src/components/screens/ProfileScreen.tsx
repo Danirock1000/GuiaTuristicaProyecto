@@ -39,8 +39,10 @@ export default function ProfileScreen() {
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={colors.background} />
       <Text style={styles.title}>Mi Perfil</Text>
-      <Text style={styles.subtitle}>{user?.nombre}</Text>
+      <Text style={styles.subtitle}>{user?.name}</Text>
       <Text style={styles.email}>{user?.email}</Text>
+      <Text style={styles.subtitle}>{user?.id}</Text>
+
 
       <TouchableOpacity
         style={[commonStyles.btnSecondary, styles.logoutBtn]}

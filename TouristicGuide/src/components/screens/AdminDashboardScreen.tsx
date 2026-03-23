@@ -15,7 +15,7 @@ export default function AdminDashboardScreen() {
       <StatusBar barStyle="light-content" backgroundColor={colors.background} />
 
       <Text style={styles.title}>Panel de Admin</Text>
-      <Text style={styles.subtitle}>Bienvenido, {user?.nombre}</Text>
+      <Text style={styles.subtitle}>Bienvenido, {user?.name}</Text>
 
       <View style={[commonStyles.card, { marginTop: spacing.lg }]}>
         <Text style={styles.cardTitle}>Rol: Administrador</Text>
