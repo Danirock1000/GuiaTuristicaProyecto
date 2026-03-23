@@ -1,14 +1,13 @@
 
 
-import { configureStore } from "@reduxjs/toolkit"
-import eventsReducer from "./slices/eventsSlices" 
+import { configureStore } from "@reduxjs/toolkit";
+import eventsReducer from "./slices/eventsSlice";
 
 export const store = configureStore({
-
-    reducer: {
-        events: eventsReducer,
-    }
-})
+  reducer: {
+    events: eventsReducer,
+  },
+});
 
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;

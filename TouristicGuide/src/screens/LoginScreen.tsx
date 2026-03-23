@@ -28,7 +28,6 @@ export default function LoginScreen({ navigation }: any) {
     try {
       await login(email, password);
     } catch (error: any) {
-      console.error("Login error:", error);
       
       // Handle specific Supabase error messages
       let errorMessage = "No se pudo iniciar sesión. Verifica tus credenciales.";

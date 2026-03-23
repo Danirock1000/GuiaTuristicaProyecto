@@ -45,10 +45,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const login = async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    console.log("Login response:", { data, error });
     
     if (error) {
-      console.error("Login error:", error);
       throw new Error(error.message || "Error al iniciar sesión");
     }
     

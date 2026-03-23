@@ -4,11 +4,13 @@ import { useNavigation } from "@react-navigation/native";
 import { colors, typography, spacing, radius } from "../../theme/theme";
 import { PLACES, SPS_REGION } from "../../data/places";
 import { useAuth } from "../../context/AuthContext";
+import { useAppSelector } from "../../store/hook";
 
 export default function MapScreen() {
   const navigation = useNavigation<any>();
   const { user } = useAuth();
   const isGuest = !user;
+  const events = useAppSelector((state) => state.events.events);
 
   return (
     <View style={styles.container}>
@@ -30,15 +32,14 @@ export default function MapScreen() {
 
       {/* Mapa */}
       <MapView style={styles.map} initialRegion={SPS_REGION}>
+        {/* Lugares fijos */}
         {PLACES.map((place) => (
           <Marker
-            key={place.id}
+            key={`place-${place.id}`}
             coordinate={{ latitude: place.latitud, longitude: place.longitud }}
             title={place.nombre}
             description={place.categoria}
-            onCalloutPress={() =>
-              navigation.navigate("PlaceDetail", { place })
-            }
+            onCalloutPress={() => navigation.navigate("PlaceDetail", { place })}
           >
             <View style={styles.markerContainer}>
               <Text style={styles.markerEmoji}>{place.emoji}</Text>
@@ -52,7 +53,41 @@ export default function MapScreen() {
             </Callout>
           </Marker>
         ))}
+
+        {/* Eventos del store */}
+        {events.map((event) => (
+          <Marker
+            key={`event-${event.id}`}
+            coordinate={{ latitude: event.latitude, longitude: event.longitude }}
+          >
+            <View style={styles.eventMarkerContainer}>
+              <Text style={styles.markerEmoji}>🎉</Text>
+            </View>
+            <Callout tooltip>
+              <View style={styles.callout}>
+                <Text style={styles.calloutTitle}>{event.title}</Text>
+                <Text style={styles.calloutCategory}>
+                  {event.is_free ? "Gratuito" : "De pago"}
+                </Text>
+                <Text style={styles.calloutHint}>
+                  {event.start_date} → {event.end_date}
+                </Text>
+              </View>
+            </Callout>
+          </Marker>
+        ))}
       </MapView>
+
+      {/* FAB: solo para usuarios logueados */}
+      {!isGuest && (
+        <TouchableOpacity
+          style={styles.fab}
+          onPress={() => navigation.navigate("AddEvent")}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.fabIcon}>+</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
@@ -102,6 +137,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  eventMarkerContainer: {
+    backgroundColor: colors.card,
+    borderRadius: radius.full,
+    borderWidth: 2,
+    borderColor: colors.gold,
+    width: 40,
+    height: 40,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   markerEmoji: {
     fontSize: 20,
   },
@@ -127,5 +172,27 @@ const styles = StyleSheet.create({
     fontSize: typography.xs,
     color: colors.textSecondary,
     marginTop: spacing.xs,
+  },
+  fab: {
+    position: "absolute",
+    bottom: spacing.xl,
+    right: spacing.md,
+    width: 56,
+    height: 56,
+    borderRadius: radius.full,
+    backgroundColor: colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    elevation: 5,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 6,
+  },
+  fabIcon: {
+    fontSize: 28,
+    fontWeight: "700",
+    color: colors.background,
+    lineHeight: 32,
   },
 });
