@@ -54,6 +54,7 @@ export const PLACES: Place[] = [
     longitud: -88.0256,
     emoji: "⛪",
   },
+  
 ];
 
 // Centro de San Pedro Sula

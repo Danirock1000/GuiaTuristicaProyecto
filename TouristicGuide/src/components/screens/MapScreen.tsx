@@ -5,6 +5,8 @@ import { colors, typography, spacing, radius } from "../../theme/theme";
 import { PLACES, SPS_REGION } from "../../data/places";
 import { useAuth } from "../../context/AuthContext";
 import { useAppSelector } from "../../store/hook";
+import { FlatList } from "react-native-gesture-handler";
+import { commonStyles } from "../../theme/theme";
 
 export default function MapScreen() {
   const navigation = useNavigation<any>();
@@ -31,7 +33,8 @@ export default function MapScreen() {
       </View>
 
       {/* Mapa */}
-      <MapView style={styles.map} initialRegion={SPS_REGION}>
+      <View style={styles.mapContainer}>
+              <MapView style={styles.map} initialRegion={SPS_REGION}>
         {/* Lugares fijos */}
         {PLACES.map((place) => (
           <Marker
@@ -76,7 +79,38 @@ export default function MapScreen() {
             </Callout>
           </Marker>
         ))}
-      </MapView>
+        </MapView>
+      </View>
+
+        {/* TAB INFERIOR DE EVENTOS */ }
+      <View style={styles.eventsContainer}>
+          <Text style= {styles.infTitle}>Eventos Locales</Text>
+          <FlatList
+          data={PLACES}
+          keyExtractor={(item) => item.id.toString()}
+          contentContainerStyle={styles.list}
+          showsHorizontalScrollIndicator={false}
+          ItemSeparatorComponent={() => <View style={{ width: 8 }} />}
+          horizontal= {true}
+          renderItem={({item}) => (
+            <View style={[commonStyles.card, styles.placeCard]}>
+                        <View style={styles.cardRow}>
+                          <View style={styles.emojiContainer}>
+                            <Text style={styles.emoji}>{item.emoji}</Text>
+                          </View>
+                          <View style={styles.cardInfo}>
+                            <Text style={styles.placeName}>{item.nombre}</Text>
+                            <Text style={styles.placeCategory}>{item.categoria}</Text>
+                            <Text style={styles.placeHorario}>{item.horario}</Text>
+                          </View>
+                        </View>
+                      </View>
+          )}
+          />
+                  
+          
+          <View/>
+      </View>
 
       {/* FAB: solo para usuarios logueados */}
       {!isGuest && (
@@ -125,7 +159,15 @@ const styles = StyleSheet.create({
     fontSize: 20,
   },
   map: {
-    flex: 1,
+    width: "100%",
+    height: "100%"
+  },
+  mapContainer: {
+    flex: 6
+  },
+  eventsContainer: {
+    flex: 4,
+    
   },
   markerContainer: {
     backgroundColor: colors.card,
@@ -195,4 +237,62 @@ const styles = StyleSheet.create({
     color: colors.background,
     lineHeight: 32,
   },
+
+  /*CARDS STYLES*/
+
+    list: {
+    padding: spacing.md,
+    height: 270,
+    
+  },
+  placeCard: {
+    marginBottom: spacing.xl,
+    marginTop: spacing.xl,
+    paddingHorizontal: 25,
+    justifyContent: "space-between"
+
+  },
+  cardRow: {
+    flexDirection: "column",
+    alignItems: "center",
+  },
+  emojiContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: radius.full,
+    backgroundColor: colors.background,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: spacing.sm,
+  },
+  emoji: {
+    fontSize: 24,
+  },
+  cardInfo: {
+    flex: 1,
+  },
+  placeName: {
+    fontSize: typography.md,
+    fontWeight: "700",
+    color: colors.textPrimary,
+  },
+  placeCategory: {
+    fontSize: typography.sm,
+    color: colors.primary,
+    marginTop: 2,
+  },
+  placeHorario: {
+    fontSize: typography.xs,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+
+  infTitle:{
+    alignContent: "center",
+    color: colors.primary,
+    fontSize: typography.xl,
+    fontWeight: "bold",
+    marginHorizontal: "auto",
+    marginTop: 12
+  }
 });

@@ -58,6 +58,8 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginBottom: spacing.md,
   },
+
+
   list: {
     paddingBottom: spacing.xl,
   },
