@@ -1,0 +1,68 @@
+import { Event } from "../store/slices/eventsSlice";
+
+export const INITIAL_EVENTS: Event[] = [
+  {
+    id: "evt-001",
+    title: "Feria Gastronómica San Pedro Sula",
+    description:
+      "El evento gastronómico más grande del norte de Honduras. Más de 50 restaurantes y chefs locales presentando lo mejor de la cocina hondureña e internacional.",
+    latitude: 15.5042,
+    longitude: -88.0251,
+    place_id: "2",
+    category_id: "gastronomia",
+    start_date: "2026-04-05",
+    end_date: "2026-04-07",
+    is_free: true,
+    status: "active",
+    created_by: "system",
+    created_at: "2026-03-01T00:00:00Z",
+  },
+  {
+    id: "evt-002",
+    title: "Concierto Rock en el Estadio",
+    description:
+      "Gran concierto de rock con bandas nacionales e internacionales. Una noche inolvidable en el Estadio Olímpico Metropolitano con los mejores artistas del momento.",
+    latitude: 15.5112,
+    longitude: -88.0198,
+    place_id: "7",
+    category_id: "musica",
+    start_date: "2026-04-12",
+    end_date: "2026-04-12",
+    is_free: false,
+    status: "active",
+    created_by: "system",
+    created_at: "2026-03-01T00:00:00Z",
+  },
+  {
+    id: "evt-003",
+    title: "Expo Artesanías Lenca",
+    description:
+      "Exposición y venta de artesanías de las comunidades Lenca de Honduras. Cerámica, tejidos, pinturas y más. Una celebración de la cultura indígena hondureña.",
+    latitude: 15.5078,
+    longitude: -88.0289,
+    place_id: "3",
+    category_id: "cultura",
+    start_date: "2026-04-18",
+    end_date: "2026-04-20",
+    is_free: true,
+    status: "active",
+    created_by: "system",
+    created_at: "2026-03-01T00:00:00Z",
+  },
+  {
+    id: "evt-004",
+    title: "Torneo de Pesca Deportiva",
+    description:
+      "Torneo anual de pesca deportiva en el Lago de Sula. Categorías para adultos y niños. Premios para los mejores pescadores y actividades recreativas para toda la familia.",
+    latitude: 15.5320,
+    longitude: -87.9980,
+    place_id: "8",
+    category_id: "deportes",
+    start_date: "2026-04-25",
+    end_date: "2026-04-26",
+    is_free: false,
+    status: "active",
+    created_by: "system",
+    created_at: "2026-03-01T00:00:00Z",
+  },
+];

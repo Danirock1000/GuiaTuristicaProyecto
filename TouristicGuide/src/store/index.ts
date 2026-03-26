@@ -2,10 +2,14 @@
 
 import { configureStore } from "@reduxjs/toolkit";
 import eventsReducer from "./slices/eventsSlice";
+import { INITIAL_EVENTS } from "../data/events";
 
 export const store = configureStore({
   reducer: {
     events: eventsReducer,
+  },
+  preloadedState: {
+    events: { events: INITIAL_EVENTS },
   },
 });
 
