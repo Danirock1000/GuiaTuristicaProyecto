@@ -60,7 +60,7 @@ export default function AddEventScreen() {
       })
     );
 
-    Alert.alert("Evento creado", "Tu evento fue enviado y está pendiente de aprobación.", [
+    Alert.alert("Evento creado", "Ahora puedes visualizar tu evento en el mapa.", [
       { text: "OK", onPress: () => navigation.goBack() },
     ]);
   };
