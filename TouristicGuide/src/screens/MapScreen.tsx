@@ -5,10 +5,10 @@ import { useNavigation } from "@react-navigation/native";
 import { useEffect, useRef, useState } from "react";
 import * as Location from "expo-location";
 import Constants from "expo-constants";
-import { colors, typography, spacing, radius, commonStyles } from "../../theme/theme";
-import { PLACES, SPS_REGION } from "../../data/places";
-import { useAuth } from "../../context/AuthContext";
-import { useAppSelector } from "../../store/hook";
+import { colors, typography, spacing, radius, commonStyles } from "../theme/theme";
+import { PLACES, SPS_REGION } from "../data/places";
+import { useAuth } from "../context/AuthContext";
+import { useAppSelector } from "../store/hook";
 import { FlatList } from "react-native-gesture-handler";
 
 const GOOGLE_MAPS_API_KEY = Constants.expoConfig?.extra?.googleMapsApiKey ?? "";
@@ -30,6 +30,7 @@ export default function MapScreen() {
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [destination, setDestination] = useState<SelectedPin>(null);
   const [selectedPin, setSelectedPin] = useState<SelectedPin>(null);
+  const [routeInfo, setRouteInfo] = useState<{ distance: number; duration: number } | null>(null);
   const panelAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -64,6 +65,17 @@ export default function MapScreen() {
   };
 
   const handleRoute = () => {
+    if (isGuest) {
+      Alert.alert(
+        "Inicia sesión",
+        "Para ver la ruta, tienes que iniciar sesión.",
+        [
+          { text: "Cancelar", style: "cancel" },
+          { text: "Iniciar sesión", onPress: () => { hidePanel(); navigation.navigate("Login"); } }
+        ]
+      );
+      return;
+    }
     if (!userLocation || !selectedPin) {
       Alert.alert("Ubicación no disponible", "Espera a que se detecte tu ubicación.");
       return;
@@ -91,7 +103,7 @@ export default function MapScreen() {
       <View style={styles.header}>
         <Text style={styles.headerTitle}>TuriMap</Text>
         {destination && (
-          <TouchableOpacity style={styles.cancelBtn} onPress={() => setDestination(null)}>
+          <TouchableOpacity style={styles.cancelBtn} onPress={() => { setDestination(null); setRouteInfo(null); }}>
             <Text style={styles.cancelText}>✕ Cancelar ruta</Text>
           </TouchableOpacity>
         )}
@@ -116,7 +128,6 @@ export default function MapScreen() {
           showsMyLocationButton
           onPress={() => selectedPin && hidePanel()}
         >
-          {/* Lugares fijos */}
           {PLACES.map((place) => (
             <Marker
               key={`place-${place.id}`}
@@ -144,7 +155,6 @@ export default function MapScreen() {
             </Marker>
           ))}
 
-          {/* Eventos del store */}
           {events.map((event) => (
             <Marker
               key={`event-${event.id}`}
@@ -162,18 +172,13 @@ export default function MapScreen() {
               <Callout tooltip>
                 <View style={styles.callout}>
                   <Text style={styles.calloutTitle}>{event.title}</Text>
-                  <Text style={styles.calloutCategory}>
-                    {event.is_free ? "Gratuito" : "De pago"}
-                  </Text>
-                  <Text style={styles.calloutHint}>
-                    {event.start_date} → {event.end_date}
-                  </Text>
+                  <Text style={styles.calloutCategory}>{event.is_free ? "Gratuito" : "De pago"}</Text>
+                  <Text style={styles.calloutHint}>{event.start_date} → {event.end_date}</Text>
                 </View>
               </Callout>
             </Marker>
           ))}
 
-          {/* Ruta */}
           {destination && userLocation && (
             <MapViewDirections
               origin={userLocation}
@@ -181,14 +186,25 @@ export default function MapScreen() {
               apikey={GOOGLE_MAPS_API_KEY}
               strokeWidth={4}
               strokeColor={colors.primary}
+              onReady={(result) => setRouteInfo({ distance: result.distance, duration: result.duration })}
               onError={() => Alert.alert("Error", "No se pudo trazar la ruta.")}
             />
           )}
         </MapView>
       </View>
 
-      {/* Tab inferior de eventos */}
+      {/* Tab inferior */}
       <View style={styles.eventsContainer}>
+        {routeInfo && destination && (
+          <View style={styles.routeInfoCard}>
+            <Text style={styles.routeInfoCardTitle} numberOfLines={1}>{destination.title}</Text>
+            <View style={styles.routeInfoCardRow}>
+              <Text style={styles.routeInfoCardText}>📍 {routeInfo.distance.toFixed(1)} km</Text>
+              <Text style={styles.routeInfoCardDot}>·</Text>
+              <Text style={styles.routeInfoCardText}>🕐 {Math.round(routeInfo.duration)} min</Text>
+            </View>
+          </View>
+        )}
         <Text style={styles.infTitle}>Lugares disponibles</Text>
         <FlatList
           data={PLACES}
@@ -215,7 +231,7 @@ export default function MapScreen() {
         />
       </View>
 
-      {/* Panel inferior al tocar un pin */}
+      {/* Panel inferior al tocar pin */}
       {selectedPin && (
         <Animated.View style={[styles.panel, { transform: [{ translateY: panelTranslateY }] }]}>
           <View style={styles.panelHandle} />
@@ -232,7 +248,6 @@ export default function MapScreen() {
         </Animated.View>
       )}
 
-      {/* FAB: solo para usuarios logueados */}
       {!isGuest && (
         <TouchableOpacity
           style={[styles.fab, selectedPin ? styles.fabHidden : null]}
@@ -247,10 +262,7 @@ export default function MapScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
+  container: { flex: 1, backgroundColor: colors.background },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -260,239 +272,82 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.sm,
     backgroundColor: colors.background,
   },
-  headerTitle: {
-    fontSize: typography.xl,
-    fontWeight: "800",
-    color: colors.primary,
-  },
+  headerTitle: { fontSize: typography.xl, fontWeight: "800", color: colors.primary },
   profileBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: radius.full,
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: "center",
-    justifyContent: "center",
+    width: 40, height: 40, borderRadius: radius.full,
+    backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border,
+    alignItems: "center", justifyContent: "center",
   },
-  profileIcon: {
-    fontSize: 20,
-  },
+  profileIcon: { fontSize: 20 },
   cancelBtn: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    backgroundColor: colors.card,
-    borderRadius: radius.sm,
-    borderWidth: 1,
-    borderColor: colors.danger,
+    paddingHorizontal: spacing.sm, paddingVertical: spacing.xs,
+    backgroundColor: colors.card, borderRadius: radius.sm,
+    borderWidth: 1, borderColor: colors.danger,
   },
-  cancelText: {
-    color: colors.danger,
-    fontSize: typography.sm,
-    fontWeight: "600",
+  cancelText: { color: colors.danger, fontSize: typography.sm, fontWeight: "600" },
+  map: { width: "100%", height: "100%" },
+  mapContainer: { flex: 1 },
+  eventsContainer: { height: 200, backgroundColor: colors.card, borderTopWidth: 1, borderTopColor: colors.border },
+  routeInfoCard: {
+    marginHorizontal: spacing.md, marginTop: spacing.sm,
+    backgroundColor: colors.primary + "18", borderRadius: radius.sm,
+    borderWidth: 1, borderColor: colors.primary + "40",
+    paddingHorizontal: spacing.md, paddingVertical: spacing.xs,
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
   },
-  map: {
-    width: "100%",
-    height: "100%",
-  },
-  mapContainer: {
-    flex: 1,
-  },
-  eventsContainer: {
-    height: 200,
-    backgroundColor: colors.card,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-  },
+  routeInfoCardTitle: { fontSize: typography.sm, fontWeight: "700", color: colors.textPrimary, flex: 1, marginRight: spacing.sm },
+  routeInfoCardRow: { flexDirection: "row", alignItems: "center", gap: 4 },
+  routeInfoCardText: { fontSize: typography.xs, color: colors.primary, fontWeight: "600" },
+  routeInfoCardDot: { color: colors.textSecondary, fontSize: typography.xs },
   markerContainer: {
-    backgroundColor: colors.card,
-    borderRadius: radius.full,
-    borderWidth: 2,
-    borderColor: colors.primary,
-    width: 40,
-    height: 40,
-    alignItems: "center",
-    justifyContent: "center",
+    backgroundColor: colors.card, borderRadius: radius.full,
+    borderWidth: 2, borderColor: colors.primary, width: 40, height: 40,
+    alignItems: "center", justifyContent: "center",
   },
   eventMarkerContainer: {
-    backgroundColor: colors.card,
-    borderRadius: radius.full,
-    borderWidth: 2,
-    borderColor: colors.gold,
-    width: 40,
-    height: 40,
-    alignItems: "center",
-    justifyContent: "center",
+    backgroundColor: colors.card, borderRadius: radius.full,
+    borderWidth: 2, borderColor: colors.gold, width: 40, height: 40,
+    alignItems: "center", justifyContent: "center",
   },
-  markerEmoji: {
-    fontSize: 20,
-  },
+  markerEmoji: { fontSize: 20 },
   callout: {
-    backgroundColor: colors.card,
-    borderRadius: radius.sm,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.sm,
-    minWidth: 180,
+    backgroundColor: colors.card, borderRadius: radius.sm,
+    borderWidth: 1, borderColor: colors.border, padding: spacing.sm, minWidth: 180,
   },
-  calloutTitle: {
-    fontSize: typography.md,
-    fontWeight: "700",
-    color: colors.textPrimary,
-  },
-  calloutCategory: {
-    fontSize: typography.sm,
-    color: colors.primary,
-    marginTop: 2,
-  },
-  calloutHint: {
-    fontSize: typography.xs,
-    color: colors.textSecondary,
-    marginTop: spacing.xs,
-  },
+  calloutTitle: { fontSize: typography.md, fontWeight: "700", color: colors.textPrimary },
+  calloutCategory: { fontSize: typography.sm, color: colors.primary, marginTop: 2 },
+  calloutHint: { fontSize: typography.xs, color: colors.textSecondary, marginTop: spacing.xs },
   panel: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: colors.card,
-    borderTopLeftRadius: radius.lg,
-    borderTopRightRadius: radius.lg,
-    padding: spacing.lg,
-    paddingBottom: spacing.xl,
-    borderTopWidth: 1,
-    borderColor: colors.border,
-    elevation: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -3 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
+    position: "absolute", bottom: 0, left: 0, right: 0,
+    backgroundColor: colors.card, borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg,
+    padding: spacing.lg, paddingBottom: spacing.xl,
+    borderTopWidth: 1, borderColor: colors.border,
+    elevation: 8, shadowColor: "#000", shadowOffset: { width: 0, height: -3 }, shadowOpacity: 0.2, shadowRadius: 6,
   },
-  panelHandle: {
-    width: 40,
-    height: 4,
-    backgroundColor: colors.border,
-    borderRadius: 2,
-    alignSelf: "center",
-    marginBottom: spacing.md,
-  },
-  panelTitle: {
-    fontSize: typography.lg,
-    fontWeight: "700",
-    color: colors.textPrimary,
-    marginBottom: spacing.xs,
-  },
-  panelSubtitle: {
-    fontSize: typography.sm,
-    color: colors.primary,
-    marginBottom: spacing.md,
-  },
-  routeBtn: {
-    backgroundColor: colors.primary,
-    borderRadius: radius.md,
-    paddingVertical: spacing.sm,
-    alignItems: "center",
-    marginBottom: spacing.sm,
-  },
-  routeBtnText: {
-    color: colors.background,
-    fontSize: typography.md,
-    fontWeight: "700",
-  },
-  closeBtn: {
-    alignItems: "center",
-    paddingVertical: spacing.xs,
-  },
-  closeBtnText: {
-    color: colors.textSecondary,
-    fontSize: typography.sm,
-  },
+  panelHandle: { width: 40, height: 4, backgroundColor: colors.border, borderRadius: 2, alignSelf: "center", marginBottom: spacing.md },
+  panelTitle: { fontSize: typography.lg, fontWeight: "700", color: colors.textPrimary, marginBottom: spacing.xs },
+  panelSubtitle: { fontSize: typography.sm, color: colors.primary, marginBottom: spacing.md },
+  routeBtn: { backgroundColor: colors.primary, borderRadius: radius.md, paddingVertical: spacing.sm, alignItems: "center", marginBottom: spacing.sm },
+  routeBtnText: { color: colors.background, fontSize: typography.md, fontWeight: "700" },
+  closeBtn: { alignItems: "center", paddingVertical: spacing.xs },
+  closeBtnText: { color: colors.textSecondary, fontSize: typography.sm },
   fab: {
-    position: "absolute",
-    bottom: spacing.xl,
-    right: spacing.md,
-    width: 56,
-    height: 56,
-    borderRadius: radius.full,
-    backgroundColor: colors.primary,
-    alignItems: "center",
-    justifyContent: "center",
-    elevation: 5,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 6,
+    position: "absolute", bottom: spacing.xl, right: spacing.md,
+    width: 56, height: 56, borderRadius: radius.full,
+    backgroundColor: colors.primary, alignItems: "center", justifyContent: "center",
+    elevation: 5, shadowColor: colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 6,
   },
-  fabHidden: {
-    display: "none",
-  },
-  fabIcon: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: colors.background,
-    lineHeight: 32,
-  },
-
-  /*CARDS STYLES*/
-  list: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    alignItems: "center",
-  },
-  placeCard: {
-    width: 220,
-    height: 120,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: colors.primary + "40",
-  },
-  cardRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  emojiContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: radius.full,
-    backgroundColor: colors.background,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: spacing.sm,
-  },
-  emoji: {
-    fontSize: 20,
-  },
-  cardInfo: {
-    flex: 1,
-  },
-  placeName: {
-    fontSize: typography.sm,
-    fontWeight: "700",
-    color: colors.textPrimary,
-  },
-  placeCategory: {
-    fontSize: typography.xs,
-    color: colors.primary,
-    marginTop: 2,
-  },
-  placeHorario: {
-    fontSize: typography.xs,
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
-  placeDesc: {
-    fontSize: typography.xs,
-    color: colors.textSecondary,
-    marginTop: 4,
-    opacity: 0.7,
-  },
-  infTitle: {
-    color: colors.primary,
-    fontSize: typography.md,
-    fontWeight: "bold",
-    textAlign: "center",
-    paddingTop: spacing.sm,
-  },
+  fabHidden: { display: "none" },
+  fabIcon: { fontSize: 28, fontWeight: "700", color: colors.background, lineHeight: 32 },
+  list: { paddingHorizontal: spacing.md, paddingVertical: spacing.xs, alignItems: "center" },
+  placeCard: { width: 220, height: 120, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, justifyContent: "center", borderWidth: 1, borderColor: colors.primary + "40" },
+  cardRow: { flexDirection: "row", alignItems: "center" },
+  emojiContainer: { width: 40, height: 40, borderRadius: radius.full, backgroundColor: colors.background, alignItems: "center", justifyContent: "center", marginRight: spacing.sm },
+  emoji: { fontSize: 20 },
+  cardInfo: { flex: 1 },
+  placeName: { fontSize: typography.sm, fontWeight: "700", color: colors.textPrimary },
+  placeCategory: { fontSize: typography.xs, color: colors.primary, marginTop: 2 },
+  placeHorario: { fontSize: typography.xs, color: colors.textSecondary, marginTop: 2 },
+  placeDesc: { fontSize: typography.xs, color: colors.textSecondary, marginTop: 4, opacity: 0.7 },
+  infTitle: { color: colors.primary, fontSize: typography.md, fontWeight: "bold", textAlign: "center", paddingTop: spacing.sm },
 });

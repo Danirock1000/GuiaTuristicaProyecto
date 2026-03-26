@@ -1,5 +1,5 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import TabsNavigator from "../components/navigation/TabsNavigator";
+import TabsNavigator from "./TabsNavigator";
 import AddEventScreen from "../screens/AddEventScreen";
 
 export type UserStackParamList = {

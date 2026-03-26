@@ -3,7 +3,7 @@ import { Text } from 'react-native';
 import MapScreen from "../screens/MapScreen";
 import EventsScreen from '../screens/EventsScreen';
 import ProfileScreen from '../screens/ProfileScreen';
-import { colors, typography } from '../../theme/theme';
+import { colors, typography } from '../theme/theme';
 
 export type TabsParamList = {
   Map: undefined;

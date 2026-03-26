@@ -1,7 +1,7 @@
 import { View, Text, FlatList, StyleSheet, StatusBar } from "react-native";
-import { colors, typography, spacing, radius, commonStyles } from "../../theme/theme";
-import { PLACES } from "../../data/places";
-import { useAuth } from "../../context/AuthContext";
+import { colors, typography, spacing, radius, commonStyles } from "../theme/theme";
+import { PLACES } from "../data/places";
+import { useAuth } from "../context/AuthContext";
 
 export default function EventsScreen() {
   const { user } = useAuth();
@@ -10,12 +10,10 @@ export default function EventsScreen() {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={colors.background} />
-
       <Text style={styles.title}>Lugares destacados</Text>
       {isGuest && (
         <Text style={styles.guestHint}>Solo lectura — inicia sesión para guardar</Text>
       )}
-
       <FlatList
         data={PLACES}
         keyExtractor={(item) => item.id.toString()}
@@ -41,63 +39,16 @@ export default function EventsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.xl + spacing.md,
-  },
-  title: {
-    fontSize: typography.xl,
-    fontWeight: "800",
-    color: colors.textPrimary,
-    marginBottom: spacing.xs,
-  },
-  guestHint: {
-    fontSize: typography.sm,
-    color: colors.textSecondary,
-    marginBottom: spacing.md,
-  },
-
-
-  list: {
-    paddingBottom: spacing.xl,
-  },
-  placeCard: {
-    marginBottom: spacing.sm,
-  },
-  cardRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  emojiContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: radius.full,
-    backgroundColor: colors.background,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: spacing.sm,
-  },
-  emoji: {
-    fontSize: 24,
-  },
-  cardInfo: {
-    flex: 1,
-  },
-  placeName: {
-    fontSize: typography.md,
-    fontWeight: "700",
-    color: colors.textPrimary,
-  },
-  placeCategory: {
-    fontSize: typography.sm,
-    color: colors.primary,
-    marginTop: 2,
-  },
-  placeHorario: {
-    fontSize: typography.xs,
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
+  container: { flex: 1, backgroundColor: colors.background, paddingHorizontal: spacing.md, paddingTop: spacing.xl + spacing.md },
+  title: { fontSize: typography.xl, fontWeight: "800", color: colors.textPrimary, marginBottom: spacing.xs },
+  guestHint: { fontSize: typography.sm, color: colors.textSecondary, marginBottom: spacing.md },
+  list: { paddingBottom: spacing.xl },
+  placeCard: { marginBottom: spacing.sm },
+  cardRow: { flexDirection: "row", alignItems: "center" },
+  emojiContainer: { width: 48, height: 48, borderRadius: radius.full, backgroundColor: colors.background, alignItems: "center", justifyContent: "center", marginRight: spacing.sm },
+  emoji: { fontSize: 24 },
+  cardInfo: { flex: 1 },
+  placeName: { fontSize: typography.md, fontWeight: "700", color: colors.textPrimary },
+  placeCategory: { fontSize: typography.sm, color: colors.primary, marginTop: 2 },
+  placeHorario: { fontSize: typography.xs, color: colors.textSecondary, marginTop: 2 },
 });

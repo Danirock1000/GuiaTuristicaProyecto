@@ -1,5 +1,5 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import AdminDashboardScreen from "../components/screens/AdminDashboardScreen";
+import AdminDashboardScreen from "../screens/AdminDashboardScreen";
 
 export type AdminStackParamList = {
   AdminDashboard: undefined;
