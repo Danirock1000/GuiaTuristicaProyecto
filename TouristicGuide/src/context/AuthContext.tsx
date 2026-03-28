@@ -72,9 +72,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const register = async (email: string, password: string, name: string) => {
     const {data, error} = await supabase.auth.signUp({
       email,
-      password
+      password,
+      options: { data: { name } },
     });
-    console.log("res data: ", data)
     if (error) throw error;
     if (!data.user) throw new Error("Error al registrar usuario");
 
