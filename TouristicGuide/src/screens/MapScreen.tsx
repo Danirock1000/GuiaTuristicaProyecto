@@ -248,15 +248,6 @@ export default function MapScreen() {
         </Animated.View>
       )}
 
-      {!isGuest && (
-        <TouchableOpacity
-          style={[styles.fab, selectedPin ? styles.fabHidden : null]}
-          onPress={() => navigation.navigate("AddEvent")}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.fabIcon}>+</Text>
-        </TouchableOpacity>
-      )}
     </View>
   );
 }
