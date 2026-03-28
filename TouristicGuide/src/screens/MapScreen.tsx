@@ -20,6 +20,7 @@ type SelectedPin = {
   longitude: number;
   title: string;
   subtitle?: string;
+  description?: string;
 } | null;
 
 const markerStyles = StyleSheet.create({
@@ -76,7 +77,7 @@ const PlaceMarker = memo(({ place, onPress, onNavigate }: PlaceMarkerProps) => {
 });
 
 type EventMarkerProps = {
-  event: { id: string; latitude: number; longitude: number; title: string; is_free: boolean; start_date: string; end_date: string };
+  event: { id: string; latitude: number; longitude: number; title: string; description: string; is_free: boolean; start_date: string; end_date: string };
   onPress: (pin: NonNullable<SelectedPin>) => void;
 };
 
@@ -86,7 +87,7 @@ const EventMarker = memo(({ event, onPress }: EventMarkerProps) => {
   <Marker
     key={`event-${event.id}`}
     coordinate={{ latitude: event.latitude, longitude: event.longitude }}
-    onPress={() => onPress({ latitude: event.latitude, longitude: event.longitude, title: event.title, subtitle: event.is_free ? "Gratuito" : "De pago" })}
+    onPress={() => onPress({ latitude: event.latitude, longitude: event.longitude, title: event.title, subtitle: event.is_free ? "Gratuito" : "De pago", description: event.description })}
     tracksViewChanges={!ready}
   >
     <View style={markerStyles.eventMarkerContainer} onLayout={() => setReady(true)}>
@@ -125,10 +126,10 @@ export default function MapScreen() {
     ? [
         ...PLACES
           .filter((p) => p.nombre.toLowerCase().includes(searchQuery.toLowerCase()) || p.categoria.toLowerCase().includes(searchQuery.toLowerCase()))
-          .map((p) => ({ id: `place-${p.id}`, label: p.nombre, sublabel: p.categoria, emoji: p.emoji, latitude: p.latitud, longitude: p.longitud })),
+          .map((p) => ({ id: `place-${p.id}`, label: p.nombre, sublabel: p.categoria, emoji: p.emoji, latitude: p.latitud, longitude: p.longitud, description: undefined })),
         ...events
           .filter((e) => e.title.toLowerCase().includes(searchQuery.toLowerCase()))
-          .map((e) => ({ id: `event-${e.id}`, label: e.title, sublabel: e.is_free ? "Gratuito" : "De pago", emoji: "🎉", latitude: e.latitude, longitude: e.longitude })),
+          .map((e) => ({ id: `event-${e.id}`, label: e.title, sublabel: e.is_free ? "Gratuito" : "De pago", emoji: "🎉", latitude: e.latitude, longitude: e.longitude, description: e.description })),
       ]
     : [];
 
@@ -147,6 +148,7 @@ export default function MapScreen() {
       longitude: item.longitude,
       title: item.label,
       subtitle: item.sublabel,
+      description: item.description,
     });
   };
 
@@ -444,7 +446,7 @@ export default function MapScreen() {
                   activeOpacity={0.85}
                   onPress={() => {
                     mapRef.current?.animateToRegion({ latitude: item.latitude, longitude: item.longitude, latitudeDelta: 0.01, longitudeDelta: 0.01 }, 600);
-                    showPanel({ latitude: item.latitude, longitude: item.longitude, title: item.title, subtitle: item.is_free ? "Gratuito" : "De pago" });
+                    showPanel({ latitude: item.latitude, longitude: item.longitude, title: item.title, subtitle: item.is_free ? "Gratuito" : "De pago", description: item.description });
                   }}
                 >
                   <View style={styles.eventCardHeader}>
@@ -473,6 +475,9 @@ export default function MapScreen() {
           <Text style={styles.panelTitle}>{selectedPin.title}</Text>
           {selectedPin.subtitle && (
             <Text style={styles.panelSubtitle}>{selectedPin.subtitle}</Text>
+          )}
+          {selectedPin.description && (
+            <Text style={styles.panelDescription}>{selectedPin.description}</Text>
           )}
           <TouchableOpacity style={styles.routeBtn} onPress={handleRoute} activeOpacity={0.8}>
             <Text style={styles.routeBtnText}>📍 Cómo llegar</Text>
@@ -663,6 +668,7 @@ const styles = StyleSheet.create({
   panelHandle: { width: 40, height: 4, backgroundColor: colors.border, borderRadius: 2, alignSelf: "center", marginBottom: spacing.md },
   panelTitle: { fontSize: typography.lg, fontWeight: "700", color: colors.textPrimary, marginBottom: spacing.xs },
   panelSubtitle: { fontSize: typography.sm, color: colors.primary, marginBottom: spacing.md },
+  panelDescription: { fontSize: typography.sm, color: colors.textSecondary, lineHeight: 20, marginBottom: spacing.md },
   routeBtn: { backgroundColor: colors.primary, borderRadius: radius.md, paddingVertical: spacing.sm, alignItems: "center", marginBottom: spacing.sm },
   routeBtnText: { color: colors.background, fontSize: typography.md, fontWeight: "700" },
   closeBtn: { alignItems: "center", paddingVertical: spacing.xs },
