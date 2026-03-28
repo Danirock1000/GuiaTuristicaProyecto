@@ -9,7 +9,10 @@ import {
   ScrollView,
   Switch,
   Alert,
+  Platform,
 } from "react-native";
+import DateTimePicker, { type DateTimePickerEvent } from "@react-native-community/datetimepicker";
+import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { colors, typography, spacing, commonStyles } from "../theme/theme";
 import { useAuth } from "../context/AuthContext";
@@ -30,8 +33,58 @@ export default function AddEventScreen() {
   const [longitude, setLongitude] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [activeDateField, setActiveDateField] = useState<"start" | "end" | null>(null);
   const [isFree, setIsFree] = useState(true);
   const [saving, setSaving] = useState(false);
+
+  const formatDateInput = (date: Date) => {
+    const year = date.getFullYear();
+    const month = `${date.getMonth() + 1}`.padStart(2, "0");
+    const day = `${date.getDate()}`.padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  const parseDateInput = (value: string) => {
+    const [year, month, day] = value.split("-").map(Number);
+    if (!year || !month || !day) {
+      return null;
+    }
+
+    const parsedDate = new Date(year, month - 1, day);
+    return Number.isNaN(parsedDate.getTime()) ? null : parsedDate;
+  };
+
+  const getPickerDate = () => {
+    const currentValue = activeDateField === "end" ? endDate : startDate;
+    return parseDateInput(currentValue) ?? new Date();
+  };
+
+  const openDatePicker = (field: "start" | "end") => {
+    setActiveDateField(field);
+  };
+
+  const handleDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
+    if (event.type === "dismissed") {
+      setActiveDateField(null);
+      return;
+    }
+
+    if (!selectedDate || !activeDateField) {
+      return;
+    }
+
+    const formattedDate = formatDateInput(selectedDate);
+
+    if (activeDateField === "start") {
+      setStartDate(formattedDate);
+    } else {
+      setEndDate(formattedDate);
+    }
+
+    if (Platform.OS !== "ios") {
+      setActiveDateField(null);
+    }
+  };
 
   const toTimestamp = (dateText: string, endOfDay = false) => {
     const suffix = endOfDay ? "T23:59:59.000Z" : "T00:00:00.000Z";
@@ -212,23 +265,53 @@ export default function AddEventScreen() {
           keyboardType="numeric"
         />
 
-        <Text style={styles.label}>Fecha inicio * (YYYY-MM-DD)</Text>
-        <TextInput
-          style={commonStyles.inputField}
-          placeholder="Ej: 2026-04-01"
-          placeholderTextColor={colors.textSecondary}
-          value={startDate}
-          onChangeText={setStartDate}
-        />
+        <Text style={styles.label}>Fecha inicio *</Text>
+        <TouchableOpacity
+          style={[commonStyles.inputField, styles.dateField]}
+          onPress={() => openDatePicker("start")}
+          activeOpacity={0.8}
+        >
+          <Text style={startDate ? styles.dateValue : styles.datePlaceholder}>
+            {startDate || "Selecciona la fecha de inicio"}
+          </Text>
+          <Ionicons name="calendar-outline" size={18} color={colors.textMuted} />
+        </TouchableOpacity>
 
-        <Text style={styles.label}>Fecha fin * (YYYY-MM-DD)</Text>
-        <TextInput
-          style={commonStyles.inputField}
-          placeholder="Ej: 2026-04-02"
-          placeholderTextColor={colors.textSecondary}
-          value={endDate}
-          onChangeText={setEndDate}
-        />
+        <Text style={styles.label}>Fecha fin *</Text>
+        <TouchableOpacity
+          style={[commonStyles.inputField, styles.dateField]}
+          onPress={() => openDatePicker("end")}
+          activeOpacity={0.8}
+        >
+          <Text style={endDate ? styles.dateValue : styles.datePlaceholder}>
+            {endDate || "Selecciona la fecha de fin"}
+          </Text>
+          <Ionicons name="calendar-outline" size={18} color={colors.textMuted} />
+        </TouchableOpacity>
+
+        {activeDateField && (
+          <View style={styles.datePickerCard}>
+            <DateTimePicker
+              value={getPickerDate()}
+              mode="date"
+              display={Platform.OS === "ios" ? "inline" : "default"}
+              design={Platform.OS === "android" ? "material" : undefined}
+              themeVariant="dark"
+              accentColor={colors.primary}
+              title={Platform.OS === "android" ? (activeDateField === "start" ? "Selecciona fecha de inicio" : "Selecciona fecha de fin") : undefined}
+              initialInputMode={Platform.OS === "android" ? "default" : undefined}
+              positiveButton={Platform.OS === "android" ? { label: "Aceptar", textColor: colors.primary } : undefined}
+              negativeButton={Platform.OS === "android" ? { label: "Cancelar", textColor: colors.textSecondary } : undefined}
+              minimumDate={new Date(2024, 0, 1)}
+              onChange={handleDateChange}
+            />
+            {Platform.OS === "ios" && (
+              <TouchableOpacity style={styles.datePickerDoneBtn} onPress={() => setActiveDateField(null)} activeOpacity={0.8}>
+                <Text style={styles.datePickerDoneText}>Listo</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
 
         <View style={styles.switchRow}>
           <Text style={styles.label}>Evento gratuito</Text>
@@ -286,6 +369,37 @@ const styles = StyleSheet.create({
   textArea: {
     height: 90,
     textAlignVertical: "top",
+  },
+  dateField: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  dateValue: {
+    color: colors.textPrimary,
+    fontSize: typography.md,
+  },
+  datePlaceholder: {
+    color: colors.textSecondary,
+    fontSize: typography.md,
+  },
+  datePickerCard: {
+    backgroundColor: colors.card,
+    borderRadius: spacing.md,
+    padding: spacing.sm,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  datePickerDoneBtn: {
+    alignSelf: "flex-end",
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+  },
+  datePickerDoneText: {
+    color: colors.primary,
+    fontSize: typography.sm,
+    fontWeight: "700",
   },
   switchRow: {
     flexDirection: "row",

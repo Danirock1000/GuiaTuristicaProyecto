@@ -6,6 +6,7 @@ export default {
     slug: "TouristicGuide",
     version: "1.0.0",
     orientation: "portrait",
+    plugins: ["@react-native-community/datetimepicker"],
     icon: "./assets/icon.png",
     userInterfaceStyle: "light",
     splash: {
