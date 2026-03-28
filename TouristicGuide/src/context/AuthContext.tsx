@@ -27,12 +27,47 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const mapAuthUser = (
+    authUser: {
+      id: string;
+      email?: string | null;
+      created_at?: string;
+      user_metadata?: Record<string, any>;
+    } | null,
+    accessToken?: string
+  ): User => {
+    if (!authUser) return null;
+
+    return {
+      id: String(authUser.id),
+      name: authUser.user_metadata?.name ?? "",
+      email: authUser.email ?? "",
+      avatarUrl: authUser.user_metadata?.avatarUrl ?? "",
+      role: authUser.user_metadata?.role ?? "user",
+      isActive: true,
+      createdAt: authUser.created_at ?? new Date().toISOString(),
+      token: accessToken,
+    };
+  };
+
   useEffect(() => {
-    const loadUser = async () => {
+    const bootstrapSession = async () => {
       try {
+        const { data } = await supabase.auth.getSession();
+        if (data.session?.user) {
+          const currentUser = mapAuthUser(data.session.user, data.session.access_token);
+          setUser(currentUser);
+          await AsyncStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(currentUser));
+          return;
+        }
+
         const stored = await AsyncStorage.getItem(AUTH_STORAGE_KEY);
-        if (stored) {
+        if (!stored) return;
+
+        try {
           setUser(JSON.parse(stored));
+        } catch {
+          await AsyncStorage.removeItem(AUTH_STORAGE_KEY);
         }
       } catch (e) {
         console.error("Error cargando sesión:", e);
@@ -40,7 +75,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setIsLoading(false);
       }
     };
-    loadUser();
+
+    bootstrapSession();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (!session?.user) {
+        setUser(null);
+        await AsyncStorage.removeItem(AUTH_STORAGE_KEY);
+        return;
+      }
+
+      const currentUser = mapAuthUser(session.user, session.access_token);
+      setUser(currentUser);
+      await AsyncStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(currentUser));
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
   }, []);
 
   const login = async (email: string, password: string) => {
@@ -54,16 +106,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       throw new Error("Usuario no encontrado");
     }
 
-    const signedUser: User = {
-      id: String(data.user.id),
-      name: (data.user.user_metadata as any)?.name ?? "",
-      email: data.user.email ?? "",
-      avatarUrl: (data.user.user_metadata as any)?.avatarUrl ?? "",
-      role: (data.user.user_metadata as any)?.role ?? "user",
-      isActive: true,
-      createdAt: data.user.created_at ?? new Date().toISOString(),
-      token: data.session?.access_token,
-    };
+    const signedUser = mapAuthUser(data.user, data.session?.access_token);
 
     setUser(signedUser);
     await AsyncStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(signedUser));
@@ -77,13 +120,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     });
     if (error) throw error;
     if (!data.user) throw new Error("Error al registrar usuario");
-
-    // For registration, we might want to automatically sign in the user
-    // or show a message that they need to confirm their email
-    // For now, we'll just return without setting the user
   };
 
   const logout = async () => {
+    await supabase.auth.signOut();
     setUser(null);
     await AsyncStorage.removeItem(AUTH_STORAGE_KEY);
   };

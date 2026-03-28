@@ -12,7 +12,6 @@ export interface Event {
   end_date: string;
   photo_url?: string;
   is_free: boolean;
-  status: "pending" | "active" | "rejected";
   created_by: string;
   created_at: string;
 }

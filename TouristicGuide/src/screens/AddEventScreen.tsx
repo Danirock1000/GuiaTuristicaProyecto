@@ -15,7 +15,9 @@ import { colors, typography, spacing, commonStyles } from "../theme/theme";
 import { useAuth } from "../context/AuthContext";
 import { useAppDispatch } from "../store/hook";
 import { addEvent } from "../store/slices/eventsSlice";
-const generateId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+import { supabase } from "../services/supabaseClient";
+
+const EVENTS_TABLE = "events";
 
 export default function AddEventScreen() {
   const navigation = useNavigation<any>();
@@ -29,10 +31,45 @@ export default function AddEventScreen() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [isFree, setIsFree] = useState(true);
+  const [saving, setSaving] = useState(false);
 
-  const handleSave = () => {
-    if (!title.trim() || !latitude.trim() || !longitude.trim() || !startDate.trim() || !endDate.trim()) {
+  const toTimestamp = (dateText: string, endOfDay = false) => {
+    const suffix = endOfDay ? "T23:59:59.000Z" : "T00:00:00.000Z";
+    const parsedDate = new Date(`${dateText}${suffix}`);
+    return Number.isNaN(parsedDate.getTime()) ? null : parsedDate.toISOString();
+  };
+
+  const handleSave = async () => {
+    const normalizedTitle = title.trim();
+    const normalizedDescription = description.trim();
+
+    if (!normalizedTitle || !latitude.trim() || !longitude.trim() || !startDate.trim() || !endDate.trim()) {
       Alert.alert("Campos requeridos", "Por favor completa título, coordenadas y fechas.");
+      return;
+    }
+
+    if (!normalizedDescription) {
+      Alert.alert("Descripción requerida", "La descripción no puede estar vacía.");
+      return;
+    }
+
+    if (normalizedDescription.length < 10) {
+      Alert.alert("Descripción muy corta", "La descripción debe tener al menos 10 caracteres.");
+      return;
+    }
+
+    if (!user?.id) {
+      Alert.alert("Sesión requerida", "Debes iniciar sesión para crear eventos.");
+      return;
+    }
+
+    const {
+      data: { user: authUser },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !authUser) {
+      Alert.alert("Sesión inválida", "Tu sesión expiró. Inicia sesión nuevamente para crear eventos.");
       return;
     }
 
@@ -44,26 +81,83 @@ export default function AddEventScreen() {
       return;
     }
 
-    dispatch(
-      addEvent({
-        id: generateId(),
-        title: title.trim(),
-        description: description.trim(),
+    const startTimestamp = toTimestamp(startDate.trim());
+    const endTimestamp = toTimestamp(endDate.trim(), true);
+
+    if (!startTimestamp || !endTimestamp) {
+      Alert.alert("Fechas inválidas", "Usa el formato YYYY-MM-DD para las fechas.");
+      return;
+    }
+
+    if (new Date(endTimestamp) < new Date(startTimestamp)) {
+      Alert.alert("Rango inválido", "La fecha de fin no puede ser menor que la fecha de inicio.");
+      return;
+    }
+
+    setSaving(true);
+
+    try {
+      const payload = {
+        title: normalizedTitle,
+        description: normalizedDescription,
+        place_id: null,
         latitude: lat,
         longitude: lng,
-        start_date: startDate.trim(),
-        end_date: endDate.trim(),
+        category_id: null,
+        start_date: startTimestamp,
+        end_date: endTimestamp,
         is_free: isFree,
-        status: "pending",
-        created_by: user!.id,
-        created_at: new Date().toISOString(),
-      })
-    );
+        created_by: authUser.id,
+      };
 
-    Alert.alert("Evento creado", "Ahora puedes visualizar tu evento en el mapa.", [
-      { text: "OK", onPress: () => navigation.goBack() },
-    ]);
+      const { data, error } = await supabase
+        .from(EVENTS_TABLE)
+        .insert(payload)
+        .select("id, title, description, place_id, latitude, longitude, category_id, start_date, end_date, is_free, created_by, created_at")
+        .single();
+
+      if (error) {
+        const extra = [
+          `code: ${error.code ?? "N/A"}`,
+          `details: ${error.details ?? "N/A"}`,
+          `hint: ${error.hint ?? "N/A"}`,
+          `uid: ${authUser.id}`,
+        ].join("\n");
+        Alert.alert("Error al guardar", `${error.message}\n\n${extra}`);
+        return;
+      }
+
+      if (!data) {
+        Alert.alert("Error al guardar", "No se recibió el evento creado desde la base de datos.");
+        return;
+      }
+
+      dispatch(
+        addEvent({
+          id: String(data.id),
+          title: data.title,
+          description: data.description ?? "",
+          place_id: data.place_id ?? undefined,
+          latitude: Number(data.latitude),
+          longitude: Number(data.longitude),
+          category_id: data.category_id ?? undefined,
+          start_date: (data.start_date ?? "").slice(0, 10),
+          end_date:   (data.end_date   ?? "").slice(0, 10),
+          is_free: data.is_free,
+          created_by: String(data.created_by),
+          created_at: data.created_at,
+        })
+      );
+
+      Alert.alert("Evento creado", "Ahora puedes visualizar tu evento en el mapa.", [
+        { text: "OK", onPress: () => navigation.goBack() },
+      ]);
+    } finally {
+      setSaving(false);
+    }
   };
+
+{/* Form visible al usuario */}
 
   return (
     <View style={styles.container}>
@@ -87,7 +181,7 @@ export default function AddEventScreen() {
           onChangeText={setTitle}
         />
 
-        <Text style={styles.label}>Descripción</Text>
+        <Text style={styles.label}>Descripción *</Text>
         <TextInput
           style={[commonStyles.inputField, styles.textArea]}
           placeholder="Describe el evento"
@@ -150,8 +244,9 @@ export default function AddEventScreen() {
           style={[commonStyles.btnPrimary, styles.saveBtn]}
           onPress={handleSave}
           activeOpacity={0.8}
+          disabled={saving}
         >
-          <Text style={commonStyles.btnPrimaryText}>Guardar evento</Text>
+          <Text style={commonStyles.btnPrimaryText}>{saving ? "Guardando..." : "Guardar evento"}</Text>
         </TouchableOpacity>
       </ScrollView>
     </View>

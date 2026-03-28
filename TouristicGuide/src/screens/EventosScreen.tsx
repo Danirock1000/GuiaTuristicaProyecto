@@ -33,9 +33,16 @@ export default function EventosScreen() {
   const isGuest = !user;
   const events = useAppSelector((state) => state.events.events);
 
+  const MONTHS = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+
   const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString("es-HN", { day: "numeric", month: "short" });
+    // Slice YYYY-MM-DD to avoid any timezone offset. Works with ISO and plain date strings.
+    const datePart = dateStr.slice(0, 10);
+    const parts = datePart.split("-");
+    if (parts.length !== 3) return datePart;
+    const month = parseInt(parts[1], 10);
+    const day   = parseInt(parts[2], 10);
+    return `${day} ${MONTHS[month - 1] ?? ""}`;
   };
 
   return (
